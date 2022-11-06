@@ -7,6 +7,11 @@
 #include <string>
 #include <cstring>
 
+#include "fmt/color.h"
+#include "fmt/core.h"
+#include "fmt/ranges.h"
+#include "asyncLogging.h"
+#include "logConfig.h"
 
 
 namespace xinlog {
@@ -38,7 +43,7 @@ using std::string;
 
         struct context;                     // to store the context from front end 
 
-        class Logger {
+        class Logger : nocopyable {
          private:    
             Logger();
 
@@ -53,8 +58,8 @@ using std::string;
             static void internal_log(const context& msg);
 
          private:   
-            void init_data();
-            // std::unique
+            void init_data();       
+            std::unique_ptr<AsyncLogging> m_logging;
         };
 
         struct context {                    // 传输数据的上下文
@@ -87,7 +92,7 @@ using std::string;
 
 #define XINLOG_NAMESPACE xinlog::detial::
 
-#define INIT_LOG(level_)    \
+#define INIT_LOG_(level_)    \
     ctx.level = level_;     \
     ctx.line  = __LINE__;   \
     ctx.long_filename  = __FILE__;  \

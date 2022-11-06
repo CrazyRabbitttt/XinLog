@@ -30,14 +30,17 @@ class AsyncLogging : nocopyable{
     using BufferPtr = std::unique_ptr<Buffer>;
     using BufferVectorPtr = std::vector<BufferPtr>;
 
+
+   // 下面就是一些配置参数
     const int m_flushInterval;              // 3s刷盘一次
     const off64_t m_rollSize;               // rollSize 
     std::atomic<bool> m_done;               // atomic vari， if done 
+    const std::string m_basename;   
+
     std::unique_ptr<std::thread> m_thread;  
     CountDownLatch latch_;   
     std::mutex mutex_;    
     std::condition_variable condv_;
-
 
     BufferPtr m_curBuffer;                 // double buffer ==> async write to disk 
     BufferPtr m_nextBuffer;
