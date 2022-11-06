@@ -17,11 +17,50 @@
 namespace xinlog {
 
 
+#ifdef LOG_TRACE
+#define TRACE_
+#endif
+//默认debug模式下
+#ifndef NDEBUG
+
 #define DEBUG_
-#define LOG_
+#define INFO_
 #define WARN_
 #define ERROR_
 #define FATAL_
+
+#endif
+
+//默认release模式下
+#ifdef NDEBUG
+
+#undef DEBUG_
+#define INFO_
+#define WARN_
+#define ERROR_
+#define FATAL_
+
+#endif
+
+#ifdef LOG_LIMIT_WARN //设置warn及以上才能记录
+
+#undef DEBUG_
+#undef INFO_
+#define WARN_
+#define ERROR_
+#define FATAL_
+
+#endif
+
+#ifdef LOG_LIMIT_ERROR //error及以上才记录
+
+#undef DEBUG_
+#undef INFO_
+#undef WARN_
+#define ERROR_
+#define FATAL_
+
+#endif
 
 using std::string;
 
@@ -70,6 +109,10 @@ using std::string;
             string text;
         };  
 
+        inline void InternalLog(context& ctx) {
+            detail::Logger::internal_log(ctx);
+        }
+
         // 外部调用接口， 最终使用获得的单例模式对象调用 member function 
         inline void DoLog(context& ctx) {
             detail::Logger::GetInstance().DoLog(ctx);   
@@ -117,7 +160,7 @@ using std::string;
 #define debug(format, args...)
 #endif
 
-#ifndef INFO_
+#ifdef INFO_
 #define info(fmt_, args_...) do {   \
         XINLOG_NAMESPACE context ctx;   \
         ctx.text = fmt.format(fmt_,##args_); \
@@ -128,6 +171,39 @@ using std::string;
 #define info(format, args...)
 #endif
 
+#ifdef WARN_
+#define warn(fmt_, args_...) do{ \
+       XINLOG_NAMESPACE context ctx;              \
+    ctx.text = fmt::format(fmt_,##args_); \
+        INIT_LOG_(2)             \
+        detail::DoLog(ctx); \
+        } while(false)
+#else
+#define warn(format, args...)
+#endif
+
+#ifdef ERROR_
+#define error(fmt_, args_...) do{ \
+        XINLOG_NAMESPACE context ctx;              \
+    ctx.text = fmt::format(fmt_,##args_); \
+        INIT_LOG_(3)              \
+        detail::DoLog(ctx); \
+        } while(false)
+#else
+#define error(format, args...)
+#endif
+
+
+#ifdef FATAL_
+#define fatal(fmt_, args_...) do{ \
+        XINLOG_NAMESPACE context ctx;              \
+    ctx.text = fmt::format(fmt_,##args_); \
+        INIT_LOG_(4)              \
+        detail::DoLog(ctx); \
+        } while(false)
+#else
+#define fatal(format, args...)
+#endif
 
 
 

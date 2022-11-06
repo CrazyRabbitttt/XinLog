@@ -64,15 +64,15 @@ void detail::Logger::init_data() {
     }
 }
 
-// void detail::Logger::internal_log(const detail::context& ctx) {
-//     flockfile(stdout);
-//     fmt::print(stdout, fg(fmt::color::green),
-//                "[LOG] [pid:{}] [tid:{}] {:%Y-%m-%d -%H:%M:%S} {}:{:d} {}\r\n",
-//                ProcessInfo::GetPid(), ProcessInfo::GetTid(),
-//                fmt::localtime(time(nullptr)), ctx.long_filename, ctx.line,
-//                ctx.text);
-//     funlockfile(stdout);
-// }
+void detail::Logger::internal_log(const detail::context& ctx) {
+    flockfile(stdout);
+    fmt::print(stdout, fg(fmt::color::green),
+               "[LOG] [pid:{}] [tid:{}] {:%Y-%m-%d -%H:%M:%S} {}:{:d} {}\r\n",
+               ProcessInfo::GetPid(), ProcessInfo::GetTid(),
+               fmt::localtime(time(nullptr)), ctx.log_filename, ctx.line,
+               ctx.text);
+    funlockfile(stdout);
+}
 
 void detail::Logger::LogFile(const detail::context& ctx) {
     int tid         = ProcessInfo::GetTid();                // thread id 
@@ -129,10 +129,86 @@ void detail::Logger::LogFile(const detail::context& ctx) {
 }
 
 
+void detail::Logger::LogConsole(const xinlog::detail::context& ctx) {
+    flockfile(stdout); // 给文件上锁
+    int         tid        = ProcessInfo::GetTid();
+    auto       *level_text = GET_LEVEL_TEXT(ctx.level);
+    const char *filename =
+        LOG_CONFIG.flags() & Llongname
+            ? ctx.log_filename
+            : ((LOG_CONFIG.flags() & Lshortname) ? ctx.short_filename
+                                                 : nullptr);
+    fmt::memory_buffer buffer;
+
+    if (LOG_CONFIG.flags() & Ldata) // 首先打印年月日，方便直接按事件定位日志
+    {
+        fmt::format_to(std::back_inserter(buffer), "{} ",
+                       Util::getCurrentDataTime(LOG_CONFIG.flags() & Ltime));
+    }
+
+    if (LOG_CONFIG.prefix()) // 打印前缀
+    {
+        fmt::format_to(std::back_inserter(buffer), "{} ", LOG_CONFIG.prefix());
+    }
+
+    if (LOG_CONFIG.before())
+    { // before回调
+
+        LOG_CONFIG.before()(buffer);
+    }
+
+    fmt::format_to(std::back_inserter(buffer),
+                   fg(GET_COLOR_BY_LEVEL(ctx.level)), " {}",
+                   level_text); // 打印带颜色如果为控制台
+
+    if (LOG_CONFIG.flags() & LthreadId)
+    { // 打印线程id
+        fmt::format_to(std::back_inserter(buffer), " [tid:{:d}] ", tid);
+    }
+
+    if (filename != nullptr)
+    {
+        fmt::format_to(std::back_inserter(buffer), " [{}:{:d}] ", filename,
+                       ctx.line); // 打印文件和行号
+    }
+
+    if (LOG_CONFIG.end())
+    { // end回调
+        LOG_CONFIG.end()(buffer);
+    }
+
+    if ((ctx.level == L_FATAL || ctx.level == L_ERROR) && errno)
+    { // 如果是fatal等级，则获取errno产生的错误
+        fmt::format_to(std::back_inserter(buffer),
+                       fg(GET_COLOR_BY_LEVEL(ctx.level)), "{}:{} \r\n",
+                       ctx.text, Util::getErrorInfo(errno)); // 打印提示信息
+    }
+    else
+    {
+        fmt::format_to(std::back_inserter(buffer),
+                       fg(GET_COLOR_BY_LEVEL(ctx.level)), " {} \r\n",
+                       ctx.text); // 打印提示信息
+    }
+
+    fmt::print(stdout, fmt::runtime(to_string(buffer))); // 最终输出到控制台
+
+    fflush(stdout);
+    funlockfile(stdout); // 解锁
+}
+
+
 // DoLog, passed the context
 void detail::Logger::DoLog(detail::context const &ctx) {
     if (m_logging) {
         LogFile(ctx);
+    }
+
+    if (LOG_CONFIG.console()) {
+        LogConsole(ctx);
+    }
+
+    if (ctx.level == L_FATAL) {
+        abort();
     }
 
     // 那么就直接输出到控制台

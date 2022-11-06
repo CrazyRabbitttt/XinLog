@@ -2,6 +2,7 @@
 #include "asyncLogging.h"
 
 #include <string>
+#include <assert.h>
 
 #include "loggerUtil.h"
 #include "logFile.h"
@@ -90,6 +91,9 @@ void AsyncLogging::append(const char*line, int len) {
 // 异步的写入（消费者：从vector中进行消费） 
 void AsyncLogging::thread_worker() {
     try {
+        
+        // 写入文件的抽象，当然还能够进行 rollFile 的操作
+        LogFile output(m_basename, m_rollSize, false);  
 
         BufferPtr newBuffer1 = std::make_unique<Buffer>();
         BufferPtr newBuffer2 = std::make_unique<Buffer>();
@@ -130,13 +134,37 @@ void AsyncLogging::thread_worker() {
                 Util::getCurrentDataTime(true),
                 buffersToWrite.size() - 2);
                 fputs(buf, stderr);
-                
+                output.append(buf, static_cast<int>(strlen(buf)));
+                buffersToWrite.erase(buffersToWrite.begin() + 2, buffersToWrite.end());         // 只保留两个供空间复用
+            }
+//===================== 开始写入 ==========================================================
+            for (const auto& buffer : buffersToWrite) {
+                output.append(buffer->data(), buffer->size());
             }
 
+            if (buffersToWrite.size() > 2) {
+                buffersToWrite.resize(2);
+            }
+//=================== 将剩余空间设置给备用 buffer ================================================
+            if (!newBuffer1) {
+                assert(!buffersToWrite.empty());
+                newBuffer1 = std::move(buffersToWrite.back());
+                buffersToWrite.pop_back();
+                newBuffer1->reset();                        // 重设指针，清空数据
+            }
+            if (!newBuffer2) {
+                assert(!buffersToWrite.empty());
+                newBuffer2 = std::move(buffersToWrite.back());
+                buffersToWrite.pop_back();
+                newBuffer2->reset();
+            }
 
+            buffersToWrite.clear();
+            output.flush();
         }
-
+        output.flush();
     } catch (std::exception const& e) {
-
+        fprintf(stderr, "thread abnormal exit: %s\n", e.what());
+        m_thread.reset();
     }
 }
