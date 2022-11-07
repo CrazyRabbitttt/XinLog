@@ -7,12 +7,12 @@
 #include <mutex>
 #include <memory>
 
-// #include "fileAppender.h"
+#include "fileAppender.h"
 
 namespace xinlog {
 namespace detail {
 
-class FileAppender;
+// class FileAppender;
 
 // 内部 同样也是封装了 fileAppend, 但是能够做到 rollFile 
 class LogFile : nocopyable{

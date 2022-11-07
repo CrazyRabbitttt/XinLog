@@ -1,7 +1,7 @@
 #ifndef MY_LOGGER_H_
 #define MY_LOGGER_H_
 
-#include "Config.h"
+#include "logConfig.h"
 
 #include <functional>
 #include <string>
@@ -62,7 +62,7 @@ namespace xinlog {
 
 #endif
 
-using std::string;
+    using std::string;
 
     // 配置信息
     struct Config {
@@ -132,7 +132,6 @@ using std::string;
 
     }   // namespace detial
 
-
 #define XINLOG_NAMESPACE xinlog::detial::
 
 #define INIT_LOG_(level_)    \
@@ -152,7 +151,7 @@ using std::string;
 #ifdef DEBUG_
 #define debug(fmt_, args_...) do {  \
         XINLOG_NAMESPACE context ctx;       \               
-        ctx.text = fmt.format(fmt_,##args_); \
+        ctx.text = fmt::format(fmt_,##args_); \
         INIT_LOG_(0);           \
         detail::DoLog(ctx);      \        
     } while (false)
@@ -163,7 +162,7 @@ using std::string;
 #ifdef INFO_
 #define info(fmt_, args_...) do {   \
         XINLOG_NAMESPACE context ctx;   \
-        ctx.text = fmt.format(fmt_,##args_); \
+        ctx.text = fmt::format(fmt_,##args_); \
         INIT_LOG_(1);   \
         detail::DoLog(ctx); \
     } while(false)

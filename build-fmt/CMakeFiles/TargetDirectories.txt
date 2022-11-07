@@ -1,0 +1,6 @@
+/root/My_Logger/build-fmt/CMakeFiles/rebuild_cache.dir
+/root/My_Logger/build-fmt/CMakeFiles/logger.dir
+/root/My_Logger/build-fmt/CMakeFiles/edit_cache.dir
+/root/My_Logger/build-fmt/EXCLUDE_ALL/CMakeFiles/rebuild_cache.dir
+/root/My_Logger/build-fmt/EXCLUDE_ALL/CMakeFiles/edit_cache.dir
+/root/My_Logger/build-fmt/EXCLUDE_ALL/CMakeFiles/fmt.dir

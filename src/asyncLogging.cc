@@ -3,6 +3,7 @@
 
 #include <string>
 #include <assert.h>
+#include <memory>
 
 #include "loggerUtil.h"
 #include "logFile.h"
@@ -14,7 +15,7 @@ using namespace xinlog::detail;
 
 class LogFile;
 
-AsyncLogging::AsyncLogging(std::string basename, off64_t rollSize, int flushInterval = 3)
+AsyncLogging::AsyncLogging(std::string basename, off64_t rollSize, int flushInterval )
     : m_basename(std::move(basename)), 
       m_rollSize(rollSize),
       m_flushInterval(flushInterval),

@@ -3,7 +3,7 @@
 #include <cstdio>
 #include <cassert>
 
-#include "ProcessInfo.h"
+#include "processInfo.h"
 
 using namespace xinlog::detail;
 
